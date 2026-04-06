@@ -119,7 +119,7 @@ dotnet run --project StudentManagement
 
 Once the project is running, navigate to:
 ```
-https://localhost:xxxx/swagger
+https://localhost:44354/swagger
 ```
 
 **8. Get a JWT token**
