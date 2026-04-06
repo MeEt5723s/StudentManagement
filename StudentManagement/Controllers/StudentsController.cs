@@ -23,6 +23,9 @@ public class StudentController : ControllerBase
 	[HttpGet("{id}")]
 	public async Task<IActionResult> Get(int id)
 	{
+		if (id <= 0)
+			throw new ArgumentException("Invalid student ID.", nameof(id));
+		
 		var student = await _service.GetStudent(id);
 		if (student == null)
 			return NotFound();
@@ -32,6 +35,11 @@ public class StudentController : ControllerBase
 	[HttpPost]
 	public async Task<IActionResult> Add(Student student)
 	{
+		if (student == null)
+			throw new ArgumentNullException(nameof(student), "Student cannot be null.");
+		if (student.Age <= 0)
+			throw new ArgumentException("Age cannot be 0 or lower");
+
 		await _service.AddStudent(student);
 		return Ok("Student Added");
 	}
@@ -39,6 +47,15 @@ public class StudentController : ControllerBase
 	[HttpPut]
 	public async Task<IActionResult> Update(Student student)
 	{
+		if (student == null)
+			throw new ArgumentNullException(nameof(student), "Student cannot be null.");
+
+		if (student.Id <= 0)
+			throw new ArgumentException("Invalid student ID for update.", nameof(student));
+
+		if (student.Age <= 0)
+			throw new ArgumentException("Age cannot be 0 or lower");
+
 		await _service.UpdateStudent(student);
 		return Ok("Student Updated");
 	}
@@ -46,6 +63,9 @@ public class StudentController : ControllerBase
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{
+		if (id <= 0)
+			throw new ArgumentException("Invalid student ID.", nameof(id));
+
 		await _service.DeleteStudent(id);
 		return Ok("Student Deleted");
 	}

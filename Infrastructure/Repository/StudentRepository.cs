@@ -46,11 +46,6 @@ public class StudentRepository : IStudentRepository
 
 	public async Task<Student> GetById(int id)
 	{
-		if (id <= 0)
-		{
-			_logger.LogWarning("GetById called with invalid ID: {Id}", id);
-			throw new ArgumentException("Invalid student ID.", nameof(id));
-		}
 
 		try
 		{
@@ -77,9 +72,6 @@ public class StudentRepository : IStudentRepository
 
 	public async Task<int> Add(Student student)
 	{
-		if (student == null)
-			throw new ArgumentNullException(nameof(student), "Student cannot be null.");
-
 		try
 		{
 			using var connection = CreateConnection();
@@ -99,12 +91,6 @@ public class StudentRepository : IStudentRepository
 
 	public async Task<int> Update(Student student)
 	{
-		if (student == null)
-			throw new ArgumentNullException(nameof(student), "Student cannot be null.");
-
-		if (student.Id <= 0)
-			throw new ArgumentException("Invalid student ID for update.", nameof(student));
-
 		try
 		{
 			using var connection = CreateConnection();
@@ -132,9 +118,6 @@ public class StudentRepository : IStudentRepository
 
 	public async Task<int> Delete(int id)
 	{
-		if (id <= 0)
-			throw new ArgumentException("Invalid student ID.", nameof(id));
-
 		try
 		{
 			using var connection = CreateConnection();
