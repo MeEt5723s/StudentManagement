@@ -73,8 +73,8 @@ CREATE TABLE Students (
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/yourusername/StudentManagementSystem.git
-cd StudentManagementSystem
+git clone https://github.com/MeEt5723s/StudentManagement.git
+cd StudentManagement
 ```
 
 **2. Open the solution**
@@ -87,7 +87,7 @@ In `appsettings.json`, update the connection string with your SQL Server details
 
 ```json
 "ConnectionStrings": {
-  "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=StudentDB;Trusted_Connection=True;TrustServerCertificate=True"
+  "DefaultConnection": "Server=MEETRS07;Database=MySamp;Trusted_Connection=True;TrustServerCertificate=True"
 }
 ```
 
