@@ -10,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 Log.Logger = new LoggerConfiguration()
 	.ReadFrom.Configuration(builder.Configuration)
 	.CreateLogger();
-
 builder.Host.UseSerilog();
 
 // Add services
@@ -25,7 +24,6 @@ builder.Services.AddSwaggerGen(options =>
 		Title = "Student API",
 		Version = "v1"
 	});
-
 	options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
 	{
 		Name = "Authorization",
@@ -35,7 +33,6 @@ builder.Services.AddSwaggerGen(options =>
 		In = ParameterLocation.Header,
 		Description = "Enter JWT Token like: Bearer {your token}"
 	});
-
 	options.AddSecurityRequirement(new OpenApiSecurityRequirement
 	{
 		{
@@ -52,37 +49,80 @@ builder.Services.AddSwaggerGen(options =>
 	});
 });
 
+// Validate connection string at startup
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+	?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 // Dependency Injection
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 
 // JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"]
+	?? throw new InvalidOperationException("JWT Key is not configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"]
+	?? throw new InvalidOperationException("JWT Issuer is not configured.");
+var jwtAudience = builder.Configuration["Jwt:Audience"]
+	?? throw new InvalidOperationException("JWT Audience is not configured.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-	options.TokenValidationParameters = new TokenValidationParameters
+	.AddJwtBearer(options =>
 	{
-		ValidateIssuer = true,
-		ValidateAudience = true,
-		ValidateLifetime = true,
-		ValidateIssuerSigningKey = true,
-		ValidIssuer = builder.Configuration["Jwt:Issuer"],
-		ValidAudience = builder.Configuration["Jwt:Audience"],
-		IssuerSigningKey = new SymmetricSecurityKey(
-			Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-	};
-});
+		options.TokenValidationParameters = new TokenValidationParameters
+		{
+			ValidateIssuer = true,
+			ValidateAudience = true,
+			ValidateLifetime = true,
+			ValidateIssuerSigningKey = true,
+			ValidIssuer = jwtIssuer,
+			ValidAudience = jwtAudience,
+			IssuerSigningKey = new SymmetricSecurityKey(
+				Encoding.UTF8.GetBytes(jwtKey))
+		};
+
+		options.Events = new JwtBearerEvents
+		{
+			OnAuthenticationFailed = context =>
+			{
+				Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+				return Task.CompletedTask;
+			},
+			OnTokenValidated = context =>
+			{
+				Log.Information("JWT Token validated for: {User}",
+					context.Principal?.Identity?.Name);
+				return Task.CompletedTask;
+			}
+		};
+	});
 
 var app = builder.Build();
 
 // Middleware
 app.UseMiddleware<ExceptionMiddleware>();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+if (app.Environment.IsDevelopment())
+{
+	app.UseSwagger();
+	app.UseSwaggerUI();
+}
 
-app.UseAuthentication();
+app.UseHttpsRedirection();
+app.UseAuthentication(); 
 app.UseAuthorization();
-
+app.UseMiddleware<AuthMiddleware>();
 app.MapControllers();
-app.Run();
+
+try
+{
+	Log.Information("Starting Student API...");
+	app.Run();
+}
+catch (Exception ex)
+{
+	Log.Fatal(ex, "Application startup failed.");
+}
+finally
+{
+	Log.CloseAndFlush();
+}
